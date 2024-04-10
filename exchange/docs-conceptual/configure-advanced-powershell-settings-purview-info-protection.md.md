@@ -345,7 +345,7 @@ Set-LabelPolicy -Identity Global -AdvancedSettings @{EnableLabelByMailHeader="Tr
 
 ### EnableLabelBySharePointProperties
 
-You can use the configuration you've defined with the [*labelByCustomProperties*](#migrate-labels-from-secure-islands-and-other-labeling-solutions) advanced setting for SharePoint properties that you might expose as columns to users by specifying an additional label policy advanced setting.
+[*labelByCustomProperties*](#migrate-labels-from-secure-islands-and-other-labeling-solutions)
 
 This setting is supported when you use Word, Excel, and PowerPoint.
 
@@ -360,4 +360,154 @@ Example PowerShell command, where your label policy is named "Global":
 ```PowerShell
 Set-LabelPolicy -Identity Global -AdvancedSettings @{EnableLabelBySharePointProperties="True"}
 ```
+### EnableOutlookDistributionListExpansion
 
+To extend support from other advanced settings to recipients inside Outlook distribution lists, set the **EnableOutlookDistributionListExpansion** advanced setting to **true**.
+
+- Key: **EnableOutlookDistributionListExpansion**
+- Value: **true**
+
+For example, if you've configured the [OutlookBlockTrustedDomains](#to-implement-the-warn-justify-or-block-pop-up-messages-for-specific-labels), [OutlookBlockUntrustedCollaborationLabel](#implement-pop-up-messages-in-outlook-that-warn-justify-or-block-emails-being-sent) advanced settings, and then also configure the **EnableOutlookDistributionListExpansion** setting, Outlook is enabled to expand the distribution list to ensuring that a block message appears as needed.
+
+The default timeout for expanding the distribution list is **2000** milliseconds.
+
+To modify this timeout, create the following advanced setting for the selected policy:
+
+- Key: **OutlookGetEmailAddressesTimeOutMSProperty**
+- Value: *Integer, in milliseconds*
+
+Example PowerShell command, where your label policy is named "Global":
+
+```PowerShell
+Set-LabelPolicy -Identity Global -AdvancedSettings @{
+  EnableOutlookDistributionListExpansion="true"
+  OutlookGetEmailAddressesTimeOutMSProperty="3000"
+}
+```
+
+### EnableRevokeGuiSupport
+
+If you do not want end-users to have the ability to revoke access to protected documents from their Office apps, you can remove the **Revoke Access** option from your Office apps.
+
+> [!NOTE]
+> Removing the **Revoke Access** option continues to keep your protected documents tracked in the background, and retains the admin ability to revoke access to documents [via PowerShell](/powershell/module/aipservice/set-aipservicedocumentrevoked).
+> 
+
+For the selected label policy, specify the following strings:
+
+- Key: **EnableRevokeGuiSupport**
+
+- Value: **False**
+
+Example PowerShell command, where your label policy is named "Global":
+
+```PowerShell
+Set-LabelPolicy -Identity Global -AdvancedSettings @{EnableRevokeGuiSupport="False"}
+```
+
+### EnableTrackAndRevoke
+
+By default, document tracking features are turned on for your tenant. To turn them off, such as for privacy requirements in your organization or region, set the **EnableTrackAndRevoke** value to **False**.
+
+Once turned off, document tracking data will not longer be available in your organization, and users will no longer see the [**Revoke**](revoke-access-user.md#revoke-access-from-microsoft-office-apps) menu option in their Office apps.
+
+For the selected label policy, specify the following strings:
+
+- Key: **EnableTrackAndRevoke**
+
+- Value: **False**
+
+Example PowerShell command, where your label policy is named "Global":
+
+```PowerShell
+Set-LabelPolicy -Identity Global -AdvancedSettings @{EnableTrackAndRevoke="False"}
+```
+
+After setting this value to **False**, track and revoke is turned off as follows: 
+
+- Opening protected documents with the AIP unified labeling client no longer registers the documents for track and revoke.
+- End users will no longer see the [**Revoke**](revoke-access-user.md#revoke-access-from-microsoft-office-apps) menu option in their Office apps.
+
+However, protected documents that are already registered for tracking will continue to be track, and administrators can still revoke access from PowerShell. To fully turn off track and revoke features, also run the [Disable-AipServiceDocumentTrackingFeature](/powershell/module/aipservice/disable-aipservicedocumenttrackingfeature) cmdlet.
+
+This configuration uses a policy [advanced setting](#configuring-advanced-settings-for-the-client-via-powershell) that you must configure by using Office 365 Security & Compliance Center PowerShell.
+
+> [!TIP]
+> To turn track and revoke back on, set the **EnableTrackAndRevoke** to **True**, and also run the [Enable-AipServiceDocumentTrackingFeature](/powershell/module/aipservice/enable-aipservicedocumenttrackingfeature) cmdlet.
+>
+
+### HideBarByDefault
+
+By default, users must select the **Show Bar** option from the **Sensitivity** button to display the Information Protection bar in Office apps. Use the **HideBarByDefault** key and set the value to **False** to automatically display this bar for users so that they can select labels from either the bar or the button. 
+
+For the selected label policy, specify the following strings:
+
+- Key: **HideBarByDefault**
+
+- Value: **False**
+
+Example PowerShell command, where your label policy is named "Global":
+
+```PowerShell
+Set-LabelPolicy -Identity Global -AdvancedSettings @{HideBarByDefault="False"}
+```
+
+### JustificationTextForUserText
+
+Customize the justification prompts that are displayed in both Office and the AIP client, when end users change classification labels on documents and emails.
+
+For example, as an administrator, you may want to remind your users not to add any customer identifying information into this field:
+
+:::image type="content" source="../media/justification-office.png" alt-text="Customized justification prompt text":::
+
+To modify the default **Other** text that's displayed, use the **JustificationTextForUserText** advanced property with the [Set-LabelPolicy](/powershell/module/exchange/set-labelpolicy) cmdlet. Set the value to the text you want to use instead.
+
+Sample PowerShell command, when your label policy is named "Global":
+
+``` PowerShell
+Set-LabelPolicy -Identity Global -AdvancedSettings @{JustificationTextForUserText="Other (please explain) - Do not enter sensitive info"}
+```
+
+### labelByCustomProperties
+
+The *labelByCustomProperties* setting can be used in a number of scenarios, as described in the following examples.
+
+#### Migrate labels from Secure Islands and other labeling solutions
+
+This configuration is not compatible with protected PDF files that have a .ppdf file name extension. These files cannot be opened by the client using File Explorer or PowerShell.
+
+For Office documents that are labeled by Secure Islands, you can relabel these documents with a sensitivity label by using a mapping that you define. You also use this method to reuse labels from other solutions when their labels are on Office documents. 
+
+As a result of this configuration option, the new sensitivity label is applied by the information protection client as follows:
+
+- **For Office documents**: When the document is opened in the desktop app, the new sensitivity label is shown as set and is applied when the document is saved.
+
+- **For PowerShell**: [Set-FileLabel](https://go.microsoft.com/fwlink/?linkid=2259827) and [Set-FileLabel -Autolabel](https://go.microsoft.com/fwlink/?linkid=2259827) can apply the new sensitivity label.
+
+- **For File Explorer**: In the Azure Information Protection dialog box, the new sensitivity label is shown but isn't set.
+
+This configuration requires you to specify an advanced setting named **labelByCustomProperties** for each sensitivity label that you want to map to the old label. Then for each entry, set the value by using the following syntax:
+
+```PowerShell
+[migration rule name],[Secure Islands custom property name],[Secure Islands metadata Regex value]
+```
+
+Specify your choice of a migration rule name. Use a descriptive name that helps you to identify how one or more labels from your previous labeling solution should be mapped to sensitivity label.
+
+Note that this setting does not remove the original label from the document or any visual markings in the document that the original label might have applied. To remove headers and footers, see [Remove headers and footers from other labeling solutions](#remove-headers-and-footers-from-other-labeling-solutions).
+
+Examples:
+
+- [Example 1: One-to-one mapping of the same label name](#example-1-one-to-one-mapping-of-the-same-label-name)
+- [Example 2: One-to-one mapping for a different label name](#example-2-one-to-one-mapping-for-a-different-label-name)
+- [Example 3: Many-to-one mapping of label names](#example-3-many-to-one-mapping-of-label-names)
+- [Example 4: Multiple rules for the same label](#example-4-multiple-rules-for-the-same-label)
+
+For additional customization, see:
+
+- [Extend your label migration rules to emails](#extend-your-label-migration-rules-to-emails)
+- [Extend your label migration rules to SharePoint properties](#extend-your-label-migration-rules-to-sharepoint-properties)
+
+> [!NOTE]
+> If you are migrating from your labels across tenants, such as after a company merger, we recommend that you read our [blog post on mergers and spinoffs](https://techcommunity.microsoft.com/t5/microsoft-security-and/mergers-and-spinoffs/ba-p/910455) for more information.
+>
